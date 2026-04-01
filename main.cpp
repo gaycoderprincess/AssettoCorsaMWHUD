@@ -121,6 +121,12 @@ struct tDrawable {
 		if (fuel <= 0.0101) fuel = 0.0;
 
 		if (!strcmp(name, "n20_icon") || !strcmp(name, "basepoly_add")) {
+			// reset sizes when not using nos
+			if (!strcmp(name, "n20_icon")) {
+				sizex = 30.0;
+				sizey = 30.0;
+			}
+
 			if (fuel > 0.0) {
 				// burning nos animation
 				if (ChloeMWPhysics::IsNOSEnabled(pMyPlugin->car) && fuel < storedValue) {
