@@ -61,6 +61,18 @@ float CalcAngleForRPM(float rpm, float redline) {
 	return result;
 }
 
+float GetCarRPM(Car* car) {
+	float f = ChloeMWPhysics::GetRPM(pMyPlugin->car);
+	if (f <= 0.0) return pMyPlugin->car->drivetrain.acEngine.lastInput.rpm;
+	return f;
+}
+
+float GetCarMaxRPM(Car* car) {
+	float f = ChloeMWPhysics::GetMaxRPM(pMyPlugin->car);
+	if (f <= 0.0) return pMyPlugin->car->drivetrain.acEngine.defaultEngineLimiter;
+	return f;
+}
+
 struct tDrawable {
 	const char* name;
 	float posx;
@@ -80,7 +92,7 @@ struct tDrawable {
 		if (!strcmp(name, "n20_icon")) texName = "plugins/CustomHUD/N20_ICON.png";
 		if (!strcmp(name, "880D0570")) texName = "plugins/CustomHUD/PERSUIT_ICON.png";
 		if (!strcmp(name, "TAC_Lines_7500")) {
-			switch (ChooseMaxRpmTextureNumber(pMyPlugin->car->drivetrain.acEngine.defaultEngineLimiter)) {
+			switch (ChooseMaxRpmTextureNumber(GetCarMaxRPM(pMyPlugin->car))) {
 				case RPM_7K:
 					texName = "plugins/CustomHUD/7000_LINES_00.png";
 					break;
@@ -189,8 +201,8 @@ struct tDrawable {
 				tmpColor.b = ~tmpColor.b;
 			}
 
-			float rpm = pMyPlugin->car->drivetrain.acEngine.lastInput.rpm;
-			float maxRpm = pMyPlugin->car->drivetrain.acEngine.defaultEngineLimiter;
+			float rpm = GetCarRPM(pMyPlugin->car);
+			float maxRpm = GetCarMaxRPM(pMyPlugin->car);
 			DrawRectangle(x1, x2, y1, y2, tmpColor, 0.0, texture, CalcAngleForRPM(rpm, maxRpm) * 0.01745329);
 		}
 		else if (!strcmp(name, "3rdperson_TurboDial")) {
@@ -329,7 +341,7 @@ void DrawCarSpeed() {
 }
 
 void DrawRedline() {
-	float spdx = 341.00 / (480.0 * (16.0 / 9.0));
+	float spdx = 342.00 / (480.0 * (16.0 / 9.0));
 	float spdy = 138.00 / 480.0; // was 139.00
 	spdx += 0.5;
 	spdy += 0.5;
@@ -342,7 +354,9 @@ void DrawRedline() {
 	float redlineRpm = ChloeMWPhysics::GetRedline(pMyPlugin->car);
 	if (redlineRpm <= 0.0) return;
 
-	float maxRpm = pMyPlugin->car->drivetrain.acEngine.defaultEngineLimiter;
+	float maxRpm = ChloeMWPhysics::GetMaxRPM(pMyPlugin->car);
+	if (redlineRpm >= maxRpm) return;
+
 	float maxAngle = CalcAngleForRPM(maxRpm, maxRpm) * 0.01745329;
 	float redlineAngle = CalcAngleForRPM(redlineRpm, maxRpm) * 0.01745329;
 
