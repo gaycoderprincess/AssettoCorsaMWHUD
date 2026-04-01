@@ -183,6 +183,12 @@ struct tDrawable {
 		}
 
 		if (!strcmp(name, "3rdPersonNeedle")) {
+			if (ChloeMWPhysics::IsInPerfectLaunchRange(pMyPlugin->car)) {
+				tmpColor.r = ~tmpColor.r;
+				tmpColor.g = ~tmpColor.g;
+				tmpColor.b = ~tmpColor.b;
+			}
+
 			float rpm = pMyPlugin->car->drivetrain.acEngine.lastInput.rpm;
 			float maxRpm = pMyPlugin->car->drivetrain.acEngine.defaultEngineLimiter;
 			DrawRectangle(x1, x2, y1, y2, tmpColor, 0.0, texture, CalcAngleForRPM(rpm, maxRpm) * 0.01745329);
