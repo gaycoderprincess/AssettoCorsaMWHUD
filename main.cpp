@@ -51,23 +51,7 @@ float ChooseMaxRpm(float maxRpm) {
 }
 
 float CalcAngleForRPM(float rpm, float redline) {
-	float v2 = rpm / ChooseMaxRpm(redline);
-	if (v2 >= 0.0) {
-		if (v2 > 1.0) {
-			v2 = 1.0;
-		}
-	}
-	else {
-		v2 = 0.0;
-	}
-	float result = v2 * 228.0 + 66.0;
-	if (result > 360.0) {
-		result = result - 360.0;
-	}
-	if (result < 0.0) {
-		return 360.0 - result;
-	}
-	return result;
+	return std::clamp(rpm / ChooseMaxRpm(redline), 0.0f, 1.0f) * 228.0 + 66.0;
 }
 
 float GetCarRPM(Car* car) {
@@ -361,7 +345,7 @@ void DrawCarSpeed() {
 
 void DrawRedline() {
 	float spdx = 342.00 / (480.0 * (16.0 / 9.0));
-	float spdy = 138.00 / 480.0; // was 139.00
+	float spdy = 139.00 / 480.0;
 	spdx += 0.5;
 	spdy += 0.5;
 
@@ -370,20 +354,21 @@ void DrawRedline() {
 
 	NyaDrawing::CNyaRGBA32 redlineRgb = {165, 11, 25, 255};
 
-	float redlineRpm = ChloeMWPhysics::GetRedline(pMyPlugin->car);
-	if (redlineRpm <= 0.0) return;
+	int redlineRpm = ChloeMWPhysics::GetRedline(pMyPlugin->car);
+	redlineRpm -= (redlineRpm % 1000); // is this a thing in the actual game? it seems to be required for accuracy
+	if (redlineRpm <= 0) return;
 
 	float maxRpm = ChloeMWPhysics::GetMaxRPM(pMyPlugin->car);
 	if (redlineRpm >= maxRpm) return;
 
-	float maxAngle = CalcAngleForRPM(maxRpm, maxRpm) * 0.01745329;
+	float maxAngle = CalcAngleForRPM(ChooseMaxRpm(maxRpm), maxRpm) * 0.01745329;
 	float redlineAngle = CalcAngleForRPM(redlineRpm, maxRpm) * 0.01745329;
 
-	maxAngle += (std::numbers::pi);
-	redlineAngle += (std::numbers::pi);
+	maxAngle *= -1;
+	redlineAngle *= -1;
 
 	static auto tex = LoadTexture("plugins/CustomHUD/REDLINE_COLOR.png");
-	DrawCustomArc(spdx, spdy, sizex, sizey, redlineAngle, (maxAngle - redlineAngle) / (std::numbers::pi*2), 32, redlineRgb, tex);
+	DrawCustomArc(spdx, spdy, sizex, sizey, maxAngle, std::abs(maxAngle - redlineAngle) / (std::numbers::pi*2), 32, redlineRgb, tex);
 }
 
 void DrawSpeedoText() {
