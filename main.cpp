@@ -20,6 +20,15 @@ void OnPluginGUI();
 
 #include "chloemwphysics.h"
 
+enum ShiftPotential {
+	SHIFT_POTENTIAL_NONE = 0,
+	SHIFT_POTENTIAL_DOWN = 1,
+	SHIFT_POTENTIAL_UP = 2,
+	SHIFT_POTENTIAL_GOOD = 3,
+	SHIFT_POTENTIAL_PERFECT = 4,
+	SHIFT_POTENTIAL_MISS = 5,
+};
+
 enum eRPMTexture {
 	RPM_7K,
 	RPM_8K,
@@ -191,6 +200,16 @@ struct tDrawable {
 			}
 			else {
 				tmpColor = {255, 255, 255, 60};
+			}
+		}
+
+		if (!strcmp(name, "Shift_light")) {
+			int shiftPotential = ChloeMWPhysics::GetShiftPotential(pMyPlugin->car);
+			if (shiftPotential >= SHIFT_POTENTIAL_UP) {
+				tmpColor = {255, 255, 255, 255};
+			}
+			else {
+				tmpColor = {0, 0, 0, 127};
 			}
 		}
 
