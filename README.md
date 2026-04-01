@@ -2,6 +2,8 @@
 
 Recreation of the NFS Most Wanted speedometer in Assetto Corsa
 
+<img width="1920" height="1080" alt="Screenshot_20260401_153328" src="https://github.com/user-attachments/assets/2aaebfb5-f040-4a47-9f60-7d53dbfdea2e" />
+
 ## Installation
 
 - Make sure you have the latest Steam version of the game, as this is the only version this plugin is compatible with. (exe size of 22890776 bytes)
