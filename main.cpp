@@ -115,16 +115,7 @@ struct tDrawable {
 		auto fuel = pMyPlugin->car->fuel / pMyPlugin->car->maxFuel;
 		if (fuel <= 0.0101) fuel = 0.0;
 
-		if (!strcmp(name, "basepoly_add")) {
-			if (fuel > 0.0) {
-				tmpColor = {191, 238, 65, 251};
-			}
-			else {
-				tmpColor = {255, 255, 255, 60};
-			}
-		}
-
-		if (!strcmp(name, "n20_icon")) {
+		if (!strcmp(name, "n20_icon") || !strcmp(name, "basepoly_add")) {
 			if (fuel > 0.0) {
 				// burning nos animation
 				if (ChloeMWPhysics::IsNOSEnabled(pMyPlugin->car) && fuel < storedValue) {
@@ -139,8 +130,10 @@ struct tDrawable {
 						tmpColor.b = std::lerp(255, 66, f);
 						tmpColor.a = 255;
 
-						sizex = std::lerp(36, 30, f);
-						sizey = std::lerp(36, 30, f);
+						if (!strcmp(name, "n20_icon")) {
+							sizex = std::lerp(36, 30, f);
+							sizey = std::lerp(36, 30, f);
+						}
 					}
 					else {
 						float f = animTime / 0.180;
@@ -149,8 +142,10 @@ struct tDrawable {
 						tmpColor.b = std::lerp(66, 255, f);
 						tmpColor.a = 255;
 
-						sizex = std::lerp(30, 36, f);
-						sizey = std::lerp(30, 36, f);
+						if (!strcmp(name, "n20_icon")) {
+							sizex = std::lerp(30, 36, f);
+							sizey = std::lerp(30, 36, f);
+						}
 					}
 				}
 				else {
@@ -280,8 +275,80 @@ void DrawGamebreakerBar(float gamebreakerFill) {
 	DrawCustomArc(spdx, spdy, sizex, sizey, (270 + 180 + 44.0) * 0.01745329, gamebreakerFill * 0.477, 32, gameBreakerRgb, tex);
 }
 
+void DrawCarSpeed() {
+	bool bMetric = !Speed::useMPH;
+
+	static Texture* speeds[] = {
+			LoadTexture("plugins/CustomHUD/text/speed_000.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_100.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_200.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_300.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_400.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_500.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_600.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_700.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_800.png"),
+			LoadTexture("plugins/CustomHUD/text/speed_900.png"),
+	};
+	NyaVec3 vel;
+	pMyPlugin->car->body->getVelocity(&vel);
+
+	auto spd = vel.length();
+	if (bMetric) spd *= 3.6;
+	else spd *= 2.236936;
+
+	Texture* speed100 = nullptr;
+	Texture* speed10 = nullptr;
+	Texture* speed1 = nullptr;
+
+	int spdTemp = spd;
+
+	speed1 = speeds[spdTemp % 10];
+	spdTemp -= spdTemp % 10;
+	speed10 = speeds[(spdTemp % 100) / 10];
+	spdTemp -= spdTemp % 100;
+	speed100 = speeds[(spdTemp % 1000) / 100];
+
+	if (speed100 && spd >= 100.0) {
+		DrawRectangle(0, 1, 0, 1, {0, 0, 0, 230}, 0, speed100);
+	}
+	if (speed10 && spd >= 10.0) {
+		float f = (38.0 / 1920.0);
+		DrawRectangle(0 + f, 1 + f, 0, 1, {0, 0, 0, 230}, 0, speed10);
+	}
+
+	// lowest number is always shown
+	float f = (38.0 / 1920.0) * 2;
+	DrawRectangle(0 + f, 1 + f, 0, 1, {0, 0, 0, 230}, 0, speed1);
+}
+
+void DrawRedline() {
+	float spdx = 341.00 / (480.0 * (16.0 / 9.0));
+	float spdy = 138.00 / 480.0; // was 139.00
+	spdx += 0.5;
+	spdy += 0.5;
+
+	float sizex = 128.0 / (480.0 * (16.0 / 9.0));
+	float sizey = 128.0 / 480.0;
+
+	NyaDrawing::CNyaRGBA32 redlineRgb = {165, 11, 25, 255};
+
+	float redlineRpm = ChloeMWPhysics::GetRedline(pMyPlugin->car);
+	if (redlineRpm <= 0.0) return;
+
+	float maxRpm = pMyPlugin->car->drivetrain.acEngine.defaultEngineLimiter;
+	float maxAngle = CalcAngleForRPM(maxRpm, maxRpm) * 0.01745329;
+	float redlineAngle = CalcAngleForRPM(redlineRpm, maxRpm) * 0.01745329;
+
+	maxAngle += (std::numbers::pi);
+	redlineAngle += (std::numbers::pi);
+
+	static auto tex = LoadTexture("plugins/CustomHUD/REDLINE_COLOR.png");
+	DrawCustomArc(spdx, spdy, sizex, sizey, redlineAngle, (maxAngle - redlineAngle) / (std::numbers::pi*2), 32, redlineRgb, tex);
+}
+
 void DrawSpeedoText() {
-	bool bMetric = false;
+	bool bMetric = !Speed::useMPH;
 	static auto units = LoadTexture(bMetric ? "plugins/CustomHUD/text/kmh.png" : "plugins/CustomHUD/text/mph.png");
 	if (units) {
 		DrawRectangle(0, 1, 0, 1, {255,255,255,255}, 0, units);
@@ -315,6 +382,8 @@ void DrawSpeedoText() {
 			DrawRectangle(0, 1, 0, 1, {0,0,0,230}, 0, tex);
 		}
 	}
+
+	DrawCarSpeed();
 }
 
 void OnPluginGUI() {
@@ -322,7 +391,12 @@ void OnPluginGUI() {
 	gTimer.Process();
 
 	for (auto& drawable : aDrawables) {
+		// redline below rpm gauge
+		if (!strcmp(drawable.name, "TAC_Lines_7500")) {
+			DrawRedline();
+		}
 		drawable.Render(gTimer.fDeltaTime);
+		// speedo text below speedo needles
 		if (!strcmp(drawable.name, "Shift_light")) {
 			DrawSpeedoText();
 		}
