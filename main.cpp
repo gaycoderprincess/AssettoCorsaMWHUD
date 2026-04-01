@@ -127,7 +127,7 @@ struct tDrawable {
 		if (!strcmp(name, "n20_icon")) {
 			if (fuel > 0.0) {
 				// burning nos animation
-				if (fuel < storedValue) {
+				if (ChloeMWPhysics::IsNOSEnabled(pMyPlugin->car) && fuel < storedValue) {
 					animTime += delta;
 					if (animTime >= 0.360) {
 						animTime -= 0.360;
