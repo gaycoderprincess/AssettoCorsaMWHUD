@@ -15,6 +15,7 @@ extern "C" __declspec(dllexport) bool __fastcall acpUpdate(void*, float dT) { re
 ACPlugin* pMyPlugin = nullptr;
 extern "C" __declspec(dllexport) bool __fastcall acpInit(ACPlugin* plugin) {
 	pMyPlugin = plugin;
+	OnPluginStartup();
 	WriteLog("Mod initialized");
 	return true;
 }

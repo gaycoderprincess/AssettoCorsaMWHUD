@@ -15,10 +15,50 @@
 
 #include "ac.h"
 
+void OnPluginStartup();
 void OnPluginGUI();
 #include "util.h"
 
 #include "chloemwphysics.h"
+
+NyaDrawing::CNyaRGBA32 aColors[] = {
+		{253, 253, 253, 255},
+		{112, 112, 112, 255},
+		{253, 193, 114, 255},
+		{247, 86, 48, 255},
+		{235, 161, 193, 255},
+		{110, 209, 249, 255},
+		{188, 238, 66, 255},
+		{0, 215, 201, 255},
+		{12, 120, 234, 255},
+		{171, 163, 249, 255},
+};
+
+int nHUDID = 0;
+
+int nNeedleColor = 3;
+int nLetteringColor = 1;
+int nGaugeFaceColor = 3;
+
+bool bCustomHUDColors = false;
+NyaDrawing::CNyaRGBA32 nCustomNeedleColor = {0,0,0,255};
+NyaDrawing::CNyaRGBA32 nCustomLetteringColor = {0,0,0,255};
+NyaDrawing::CNyaRGBA32 nCustomGaugeFaceColor = {0,0,0,255};
+
+NyaDrawing::CNyaRGBA32 GetNeedleColor() {
+	if (bCustomHUDColors) return nCustomNeedleColor;
+	return aColors[nNeedleColor-1];
+}
+
+NyaDrawing::CNyaRGBA32 GetLetteringColor() {
+	if (bCustomHUDColors) return nCustomLetteringColor;
+	return aColors[nLetteringColor-1];
+}
+
+NyaDrawing::CNyaRGBA32 GetGaugeFaceColor() {
+	if (bCustomHUDColors) return nCustomGaugeFaceColor;
+	return aColors[nGaugeFaceColor-1];
+}
 
 enum ShiftPotential {
 	SHIFT_POTENTIAL_NONE = 0,
@@ -28,20 +68,6 @@ enum ShiftPotential {
 	SHIFT_POTENTIAL_PERFECT = 4,
 	SHIFT_POTENTIAL_MISS = 5,
 };
-
-enum eRPMTexture {
-	RPM_7K,
-	RPM_8K,
-	RPM_9K,
-	RPM_10K,
-};
-
-eRPMTexture ChooseMaxRpmTextureNumber(float maxRpm) {
-	if (maxRpm < 7000.0) return RPM_7K;
-	if (maxRpm < 8000.0) return RPM_8K;
-	if (maxRpm < 9000.0) return RPM_9K;
-	return RPM_10K;
-}
 
 float ChooseMaxRpm(float maxRpm) {
 	if (maxRpm < 7000.0) return 7000.0;
@@ -75,45 +101,45 @@ struct tDrawable {
 	float sizey;
 	NyaDrawing::CNyaRGBA32 color;
 	float rotation = 0.0;
-	const char* texName;
+	std::string texName;
 	Texture* texture;
 	float animTime = 0.0;
 	float storedValue = 0.0;
 
 	void Render(double delta) {
-		if (!strcmp(name, "tach_fill")) texName = "plugins/CustomHUD/TACH_FILL_00.png";
+		if (!strcmp(name, "tach_fill")) {
+			texName = std::format("plugins/CustomHUD/TACH_FILL_{:02}.png", nHUDID);
+			color = GetGaugeFaceColor();
+		}
+		if (!strcmp(name, "TAC_Lines_7500")) {
+			texName = std::format("plugins/CustomHUD/{:.0f}_LINES_{:02}.png", ChooseMaxRpm(GetCarMaxRPM(pMyPlugin->car)), nHUDID);
+			color = GetLetteringColor();
+		}
+		if (!strcmp(name, "Turbo_Lines")) {
+			texName = std::format("plugins/CustomHUD/TURBO_LINES_{:02}.png", nHUDID);
+			color = GetLetteringColor();
+		}
+		if (!strcmp(name, "3rdPersonNeedle")) {
+			texName = std::format("plugins/CustomHUD/TACH_NEEDLE_{:02}.png", nHUDID);
+			color = GetNeedleColor();
+		}
+		if (!strcmp(name, "3rdperson_TurboDial")) {
+			texName = std::format("plugins/CustomHUD/TURBO_NEEDLE_{:02}.png", nHUDID);
+			color = GetNeedleColor();
+		}
+
 		if (!strcmp(name, "n20_icon")) texName = "plugins/CustomHUD/N20_ICON.png";
 		if (!strcmp(name, "880D0570")) texName = "plugins/CustomHUD/PERSUIT_ICON.png";
-		if (!strcmp(name, "TAC_Lines_7500")) {
-			switch (ChooseMaxRpmTextureNumber(GetCarMaxRPM(pMyPlugin->car))) {
-				case RPM_7K:
-					texName = "plugins/CustomHUD/7000_LINES_00.png";
-					break;
-				case RPM_8K:
-					texName = "plugins/CustomHUD/8000_LINES_00.png";
-					break;
-				case RPM_9K:
-					texName = "plugins/CustomHUD/9000_LINES_00.png";
-					break;
-				case RPM_10K:
-				default:
-					texName = "plugins/CustomHUD/10000_LINES_00.png";
-					break;
-			}
-		}
-		if (!strcmp(name, "Turbo_Lines")) texName = "plugins/CustomHUD/TURBO_LINES_00.png";
 		if (!strcmp(name, "Shift_light")) texName = "plugins/CustomHUD/SHIFT_UP_ICON.png";
 		if (!strcmp(name, "heat_icon")) texName = "plugins/CustomHUD/HEAT_ICON.png";
 		if (!strcmp(name, "10E50F5E")) texName = "plugins/CustomHUD/HEAT_ICON_ADDITIVE.png";
 		if (!strcmp(name, "8B8CCA96")) texName = "plugins/CustomHUD/METER_BACKING2.png";
 		if (!strcmp(name, "DD77F899")) texName = "plugins/CustomHUD/METER_BACKING2.png";
-		if (!strcmp(name, "3rdPersonNeedle")) texName = "plugins/CustomHUD/TACH_NEEDLE_00.png";
-		if (!strcmp(name, "3rdperson_TurboDial")) texName = "plugins/CustomHUD/TURBO_NEEDLE_00.png";
 		if (!strcmp(name, "basepoly_add")) texName = "plugins/CustomHUD/SHIFT_UP_ICON.png"; // nos arrow
 		if (!strcmp(name, "basepoly")) texName = "plugins/CustomHUD/SHIFT_UP_ICON.png"; // heat arrow
 		if (!strcmp(name, "88132592")) texName = "plugins/CustomHUD/SHIFT_UP_ICON.png"; // speedbreaker arrow
 
-		if (!texture && texName) texture = LoadTexture(texName);
+		if (!texture && !texName.empty()) texture = LoadTexture(texName.c_str());
 
 		auto tmpColor = color;
 
@@ -220,20 +246,6 @@ struct tDrawable {
 		else {
 			DrawRectangle(x1, x2, y1, y2, tmpColor, 0.0, texture, rotation * 0.01745329);
 		}
-
-		/*if (!texture) {
-			tNyaStringData str;
-			str.x = x1;
-			str.y = y2;
-			str.size = 0.03;
-
-			if (str.x < 0) str.x = 0.5;
-			if (str.y < 0) str.y = 0.5;
-			if (str.x > 1) str.x = 0.5;
-			if (str.y > 1) str.y = 0.5;
-
-			DrawString(str, name);
-		}*/
 	}
 };
 tDrawable aDrawables[] = {
@@ -435,19 +447,29 @@ void OnPluginGUI() {
 	auto fuel = pMyPlugin->car->fuel / pMyPlugin->car->maxFuel;
 	if (fuel <= 0.0101) fuel = 0.0;
 
-	// todo redline!!
 	DrawNOSBar(fuel);
 	DrawGamebreakerBar(ChloeMWPhysics::GetGameBreakerCharge(pMyPlugin->car));
+}
 
-	// ac test
+void OnPluginStartup() {
+	if (std::filesystem::exists("plugins/AssettoCorsaMWHUD_gcp.toml")) {
+		auto config = toml::parse_file("plugins/AssettoCorsaMWHUD_gcp.toml");
+		nHUDID = config["hud_id"].value_or(nHUDID);
+		nNeedleColor = config["needle_color"].value_or(nNeedleColor);
+		nLetteringColor = config["lettering_color"].value_or(nLetteringColor);
+		nGaugeFaceColor = config["gauge_face_color"].value_or(nGaugeFaceColor);
 
-	/*static auto tex = LoadTexture("plugins/CustomHUD/text/numbersbg.png");
-
-	auto graphics = pMyPlugin->sim->game->graphics;
-	auto gl = graphics->gl;
-	gl->color4f(1.0, 1.0, 1.0, 1.0);
-	if (tex) graphics->setTexture(0, tex);
-	gl->quad(0, 0, 1920, 1080, tex != nullptr, nullptr);*/
+		bCustomHUDColors = config["use_rgb_colors"].value_or(bCustomHUDColors);
+		nCustomNeedleColor.r = config["rgb_needle_color"][0].value_or(nCustomNeedleColor.r);
+		nCustomNeedleColor.g = config["rgb_needle_color"][1].value_or(nCustomNeedleColor.g);
+		nCustomNeedleColor.b = config["rgb_needle_color"][2].value_or(nCustomNeedleColor.b);
+		nCustomLetteringColor.r = config["rgb_lettering_color"][0].value_or(nCustomLetteringColor.r);
+		nCustomLetteringColor.g = config["rgb_lettering_color"][1].value_or(nCustomLetteringColor.g);
+		nCustomLetteringColor.b = config["rgb_lettering_color"][2].value_or(nCustomLetteringColor.b);
+		nCustomGaugeFaceColor.r = config["rgb_gauge_face_color"][0].value_or(nCustomGaugeFaceColor.r);
+		nCustomGaugeFaceColor.g = config["rgb_gauge_face_color"][1].value_or(nCustomGaugeFaceColor.g);
+		nCustomGaugeFaceColor.b = config["rgb_gauge_face_color"][2].value_or(nCustomGaugeFaceColor.b);
+	}
 }
 
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
