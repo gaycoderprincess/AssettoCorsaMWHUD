@@ -1,8 +1,8 @@
 hud_id = 0				# hud type (0 - Stock, 1 - Sonic, 2 - Apex, 3 - Warp, 4 - Vision, 5 - Boost, 6 - Double-Clutch, 7 - Brakestand, 8 - Hairpin, 9 - Glint, 10 - Unused)
 
-needle_color = 2			# color ID (1 to 10, uses the MW custom gauge palette)
-lettering_color = 0			# color ID (1 to 10, uses the MW custom gauge palette)
-gauge_face_color = 2			# color ID (1 to 10, uses the MW custom gauge palette)
+needle_color = 3			# color ID (1 to 10, uses the MW custom gauge palette)
+lettering_color = 1			# color ID (1 to 10, uses the MW custom gauge palette)
+gauge_face_color = 3			# color ID (1 to 10, uses the MW custom gauge palette)
 
 use_rgb_colors = false			# set this to true to use the RGB values below instead of the palette IDs above
 rgb_needle_color = [ 253, 193, 114 ]
